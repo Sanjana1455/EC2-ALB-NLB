@@ -3,7 +3,7 @@ Description: Create a simple EC2 instance with security group
 
 Parameters:
   KeyName:
-    Type: AWS::EC2::KeyPair::key-pair
+    Type: AWS::EC2::KeyPair::key-pair.pem
     Description: Key pair to connect to the instance
   InstanceType:
     Type: String
