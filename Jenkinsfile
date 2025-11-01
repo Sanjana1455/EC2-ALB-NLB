@@ -14,22 +14,22 @@ pipeline {
             }
         }
 
-        stage('Deploy EC2 Stack') {
-            steps {
-                echo "🚀 Deploying EC2 Stack..."
-                withAWS(credentials: 'aws-cred', region: "${AWS_REGION}") {
-                    sh """
-                    aws cloudformation deploy \
-                      --template-file templates/ec2-template.yaml \
-                      --stack-name ${STACK_PREFIX}-EC2 \
-                      --region ${AWS_REGION} \
-                      --parameter-overrides KeyName=sanjana-key \
-                      --capabilities CAPABILITY_NAMED_IAM \
-                      --no-fail-on-empty-changeset
-                    """
-                }
-            }
-        }
+     stage('Deploy EC2 Stack') {
+  steps {
+    echo "🚀 Deploying EC2 Stack..."
+    withAWS(region: "${AWS_REGION}", credentials: 'aws-cred') {
+      sh '''
+        aws cloudformation deploy \
+          --template-file templates/ec2-template.yaml \
+          --stack-name NetworkInfraStack-EC2 \
+          --region us-east-1 \
+          --capabilities CAPABILITY_NAMED_IAM \
+          --no-fail-on-empty-changeset
+      '''
+    }
+  }
+}
+
 
         stage('Deploy ALB Stack') {
             steps {
