@@ -1,17 +1,19 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: ALB for EC2 Deployment (fixed subnet issue)
+Description: Application Load Balancer for EC2 Deployment (fixed and validated)
 
 Parameters:
   VpcId:
     Type: AWS::EC2::VPC::Id
     Description: VPC ID where the ALB will be created
+  Subnets:
+    Type: List<AWS::EC2::Subnet::Id>
+    Description: Comma-separated list of Subnet IDs in the same VPC (2 public subnets)
 
 Resources:
-  # Security Group for ALB
   ALBSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupDescription: Security group for ALB
+      GroupDescription: Allow HTTP inbound traffic for ALB
       VpcId: !Ref VpcId
       SecurityGroupIngress:
         - IpProtocol: tcp
@@ -22,23 +24,15 @@ Resources:
         - IpProtocol: -1
           CidrIp: 0.0.0.0/0
 
-  # Select two subnets from same VPC (public ones)
-  PublicSubnets:
-    Type: AWS::EC2::Subnet::Id
-    Description: Public subnets for ALB
-    Default: subnet-xxxxxxxx,subnet-yyyyyyyy  # Replace with your two valid public subnets
-
   ApplicationLoadBalancer:
     Type: AWS::ElasticLoadBalancingV2::LoadBalancer
     Properties:
       Name: MyApplicationLB
-      Subnets:
-        - subnet-xxxxxxxx
-        - subnet-yyyyyyyy
-      SecurityGroups:
-        - !Ref ALBSecurityGroup
       Scheme: internet-facing
       Type: application
+      SecurityGroups:
+        - !Ref ALBSecurityGroup
+      Subnets: !Ref Subnets
 
   TargetGroup:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
@@ -64,4 +58,5 @@ Resources:
 
 Outputs:
   LoadBalancerDNSName:
-    Description: DNS Name
+    Description: DNS Name of the ALB
+    Value: !GetAtt ApplicationLoadBalancer.DNSName
