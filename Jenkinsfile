@@ -4,7 +4,6 @@ pipeline {
     environment {
         AWS_REGION = 'us-east-1'
         STACK_PREFIX = 'NetworkInfraStack'
-        AWS_CREDENTIALS = credentials('aws-cred')  // Jenkins credential ID
     }
 
     stages {
@@ -24,6 +23,7 @@ pipeline {
                       --template-file templates/ec2-template.yaml \
                       --stack-name ${STACK_PREFIX}-EC2 \
                       --region ${AWS_REGION} \
+                      --parameter-overrides KeyName=sanjana-key \
                       --capabilities CAPABILITY_NAMED_IAM \
                       --no-fail-on-empty-changeset
                     """
@@ -33,7 +33,7 @@ pipeline {
 
         stage('Deploy ALB Stack') {
             steps {
-                echo "🚀 Deploying ALB Stack..."
+                echo "🌐 Deploying ALB Stack..."
                 withAWS(credentials: 'aws-cred', region: "${AWS_REGION}") {
                     sh """
                     aws cloudformation deploy \
@@ -49,7 +49,7 @@ pipeline {
 
         stage('Deploy NLB Stack') {
             steps {
-                echo "🚀 Deploying NLB Stack..."
+                echo "🔁 Deploying NLB Stack..."
                 withAWS(credentials: 'aws-cred', region: "${AWS_REGION}") {
                     sh """
                     aws cloudformation deploy \
@@ -66,7 +66,7 @@ pipeline {
 
     post {
         success {
-            echo "✅ All CloudFormation stacks deployed successfully!"
+            echo "✅ All stacks deployed successfully!"
         }
         failure {
             echo "❌ Deployment failed. Please check the CloudFormation console."
