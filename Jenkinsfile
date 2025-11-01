@@ -11,7 +11,7 @@ pipeline {
         stage('📦 Checkout Code') {
             steps {
                 echo 'Checking out infrastructure templates from GitHub...'
-                git branch: 'main', url: ''
+                git branch: 'main', url: 'https://github.com/Sanjana1455/EC2-ALB-NLB.git'
             }
         }
 
