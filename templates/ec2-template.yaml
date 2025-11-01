@@ -1,23 +1,58 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: CloudFormation template to create an EC2 instance
-
-Parameters:
-  KeyName:
-    Type: AWS::EC2::KeyPair::key-pair
-    Description: Name of an existing EC2 KeyPair to enable SSH access
-     Default: key-pair
-  InstanceType:
-    Type: String
-    Default: t2.micro
-    Description: EC2 instance type
+Description: CloudFormation Template to Create EC2 Instance with New Key Pair
 
 Resources:
-  MyEC2Instance:
+  # 1️⃣ Create a new Key Pair automatically
+  EC2KeyPair:
+    Type: AWS::EC2::KeyPair
+    Properties:
+      KeyName: MyAutoKeyPair
+      KeyType: rsa
+
+  # 2️⃣ Create a Security Group for EC2
+  EC2SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allow SSH and HTTP access
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+
+  # 3️⃣ Create an EC2 Instance
+  EC2Instance:
     Type: AWS::EC2::Instance
     Properties:
-      ImageId: ami-0c02fb55956c7d316   # Amazon Linux 2 (us-east-1)
-      InstanceType: !Ref InstanceType
-      KeyName: !Ref KeyName
+      InstanceType: t2.micro
+      ImageId: ami-0c02fb55956c7d316  # Amazon Linux 2 (for us-east-1)
+      KeyName: !Ref EC2KeyPair
+      SecurityGroupIds:
+        - !Ref EC2SecurityGroup
       Tags:
         - Key: Name
           Value: MyEC2Instance
+
+  # 4️⃣ Create a VPC (if you don't already have one)
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+        - Key: Name
+          Value: MyVPC
+
+Outputs:
+  InstanceId:
+    Description: The ID of the EC2 instance
+    Value: !Ref EC2Instance
+  KeyPairName:
+    Description: The name of the created Key Pair
+    Value: !Ref EC2KeyPair
