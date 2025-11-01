@@ -21,7 +21,7 @@ pipeline {
                 withAWS(credentials: 'aws-cred', region: "${AWS_REGION}") {
                     sh """
                     aws cloudformation deploy \
-                      --template-file templates/ec2.yaml \
+                      --template-file templates/ec2-template.yaml \
                       --stack-name ${STACK_PREFIX}-EC2 \
                       --region ${AWS_REGION} \
                       --capabilities CAPABILITY_NAMED_IAM \
@@ -37,7 +37,7 @@ pipeline {
                 withAWS(credentials: 'aws-cred', region: "${AWS_REGION}") {
                     sh """
                     aws cloudformation deploy \
-                      --template-file templates/alb.yaml \
+                      --template-file templates/alb-template.yaml \
                       --stack-name ${STACK_PREFIX}-ALB \
                       --region ${AWS_REGION} \
                       --capabilities CAPABILITY_NAMED_IAM \
@@ -53,7 +53,7 @@ pipeline {
                 withAWS(credentials: 'aws-cred', region: "${AWS_REGION}") {
                     sh """
                     aws cloudformation deploy \
-                      --template-file templates/nlb.yaml \
+                      --template-file templates/nlb-template.yaml \
                       --stack-name ${STACK_PREFIX}-NLB \
                       --region ${AWS_REGION} \
                       --capabilities CAPABILITY_NAMED_IAM \
