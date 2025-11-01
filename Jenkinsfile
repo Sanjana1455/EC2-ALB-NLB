@@ -65,24 +65,27 @@ pipeline {
             }
         }
 
-        stage('Deploy ALB Stack') {
-            steps {
-                echo "🌐 Deploying ALB Stack..."
-                withAWS(region: "${AWS_REGION}", credentials: 'aws-cred') {
-                    sh '''
-                    VPC_ID=$(aws ec2 describe-vpcs --query "Vpcs[0].VpcId" --output text --region ${AWS_REGION})
-                    SUBNETS=$(aws ec2 describe-subnets --query "Subnets[*].SubnetId" --output text --region ${AWS_REGION} | tr "\\t" ",")
-                    aws cloudformation deploy \
-                        --template-file templates/alb-template.yaml \
-                        --stack-name ${STACK_PREFIX}-ALB \
-                        --region ${AWS_REGION} \
-                        --parameter-overrides VpcId=$VPC_ID Subnets=$SUBNETS \
-                        --capabilities CAPABILITY_NAMED_IAM \
-                        --no-fail-on-empty-changeset
-                    '''
-                }
-            }
-        }
+       stage('Deploy ALB Stack') {
+  steps {
+    echo "🌐 Deploying ALB Stack..."
+    withAWS(region: 'us-east-1', credentials: 'aws-cred') {
+      script {
+        def VPC_ID = sh(script: "aws ec2 describe-vpcs --query 'Vpcs[0].VpcId' --output text --region us-east-1", returnStdout: true).trim()
+        def SUBNETS = sh(script: "aws ec2 describe-subnets --filters Name=vpc-id,Values=${VPC_ID} --query 'Subnets[0:2].SubnetId' --output text --region us-east-1 | tr '\\t' ','", returnStdout: true).trim()
+        sh """
+          aws cloudformation deploy \
+            --template-file templates/alb-template.yaml \
+            --stack-name NetworkInfraStack-ALB \
+            --region us-east-1 \
+            --parameter-overrides VpcId=${VPC_ID} Subnets=${SUBNETS} \
+            --capabilities CAPABILITY_NAMED_IAM \
+            --no-fail-on-empty-changeset
+        """
+      }
+    }
+  }
+}
+
 
         stage('Deploy NLB Stack') {
             steps {
