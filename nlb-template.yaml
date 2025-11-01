@@ -1,0 +1,49 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Create a Network Load Balancer with Target Group and Listener
+
+Parameters:
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+    Description: VPC ID for NLB
+  Subnets:
+    Type: List<AWS::EC2::Subnet::Id>
+    Description: Subnets for NLB
+
+Resources:
+  MyNLB:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: MyNetworkLoadBalancer
+      Type: network
+      Scheme: internet-facing
+      Subnets: !Ref Subnets
+      Tags:
+        - Key: Name
+          Value: MyNetworkLoadBalancer
+
+  MyTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: MyNLBTargetGroup
+      Protocol: TCP
+      Port: 80
+      VpcId: !Ref VpcId
+      TargetType: instance
+
+  MyListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref MyNLB
+      Protocol: TCP
+      Port: 80
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref MyTargetGroup
+
+Outputs:
+  NLBName:
+    Description: Name of the Network Load Balancer
+    Value: !Ref MyNLB
+  NLBDNS:
+    Description: DNS name of the NLB
+    Value: !GetAtt MyNLB.DNSName
