@@ -1,20 +1,72 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: CloudFormation Template to Create EC2 Instance with New Key Pair
+Description: Create EC2 instance, VPC, and security group automatically without existing key pair
 
 Resources:
-  # 1️⃣ Create a new Key Pair automatically
-  EC2KeyPair:
-    Type: AWS::EC2::KeyPair
+  # 1️⃣ Create VPC
+  MyVPC:
+    Type: AWS::EC2::VPC
     Properties:
-      KeyName: MyAutoKeyPair
-      KeyType: rsa
+      CidrBlock: 10.0.0.0/16
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+        - Key: Name
+          Value: AutoVPC
 
-  # 2️⃣ Create a Security Group for EC2
-  EC2SecurityGroup:
+  # 2️⃣ Create Subnet
+  MySubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref MyVPC
+      CidrBlock: 10.0.1.0/24
+      MapPublicIpOnLaunch: true
+      AvailabilityZone: us-east-1a
+      Tags:
+        - Key: Name
+          Value: AutoSubnet
+
+  # 3️⃣ Create Internet Gateway
+  MyInternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: AutoIGW
+
+  # 4️⃣ Attach Internet Gateway
+  AttachGateway:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref MyVPC
+      InternetGatewayId: !Ref MyInternetGateway
+
+  # 5️⃣ Create Route Table and Route
+  MyRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref MyVPC
+
+  MyRoute:
+    Type: AWS::EC2::Route
+    DependsOn: AttachGateway
+    Properties:
+      RouteTableId: !Ref MyRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref MyInternetGateway
+
+  # 6️⃣ Associate Subnet with Route Table
+  MySubnetRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref MySubnet
+      RouteTableId: !Ref MyRouteTable
+
+  # 7️⃣ Create Security Group
+  MySecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupDescription: Allow SSH and HTTP access
-      VpcId: !Ref VPC
+      GroupDescription: Allow SSH and HTTP
+      VpcId: !Ref MyVPC
       SecurityGroupIngress:
         - IpProtocol: tcp
           FromPort: 22
@@ -25,34 +77,34 @@ Resources:
           ToPort: 80
           CidrIp: 0.0.0.0/0
 
-  # 3️⃣ Create an EC2 Instance
-  EC2Instance:
+  # 8️⃣ Create Key Pair Automatically
+  MyKeyPair:
+    Type: AWS::EC2::KeyPair
+    Properties:
+      KeyName: MyAutoKey
+      KeyType: rsa
+      Tags:
+        - Key: Name
+          Value: MyAutoKey
+
+  # 9️⃣ Launch EC2 Instance
+  MyEC2Instance:
     Type: AWS::EC2::Instance
     Properties:
       InstanceType: t2.micro
-      ImageId: ami-0c02fb55956c7d316  # Amazon Linux 2 (for us-east-1)
-      KeyName: !Ref EC2KeyPair
+      ImageId: ami-0c02fb55956c7d316   # Amazon Linux 2 (for us-east-1)
+      KeyName: !Ref MyKeyPair
       SecurityGroupIds:
-        - !Ref EC2SecurityGroup
+        - !Ref MySecurityGroup
+      SubnetId: !Ref MySubnet
       Tags:
         - Key: Name
-          Value: MyEC2Instance
-
-  # 4️⃣ Create a VPC (if you don't already have one)
-  VPC:
-    Type: AWS::EC2::VPC
-    Properties:
-      CidrBlock: 10.0.0.0/16
-      EnableDnsSupport: true
-      EnableDnsHostnames: true
-      Tags:
-        - Key: Name
-          Value: MyVPC
+          Value: AutoEC2Instance
 
 Outputs:
   InstanceId:
-    Description: The ID of the EC2 instance
-    Value: !Ref EC2Instance
+    Description: ID of the created EC2 Instance
+    Value: !Ref MyEC2Instance
   KeyPairName:
-    Description: The name of the created Key Pair
-    Value: !Ref EC2KeyPair
+    Description: Name of the created Key Pair
+    Value: !Ref MyKeyPair
