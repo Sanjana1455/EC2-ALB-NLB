@@ -1,63 +1,25 @@
-AWSTemplateFormatVersion: 2010-09-09
-Description: Create an Application Load Balancer with Target Group and Listener
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Application Load Balancer template
 
 Parameters:
   VpcId:
-    Type: AWS::EC2::VPC::Id
+    Type: String
     Description: VPC ID for the ALB
   Subnets:
-    Type: List<AWS::EC2::Subnet::Id>
-    Description: Subnets for the ALB
+    Type: CommaDelimitedList
+    Description: Subnet IDs for the ALB
 
 Resources:
-  ALBSecurityGroup:
-    Type: AWS::EC2::SecurityGroup
-    Properties:
-      GroupDescription: Allow HTTP access
-      VpcId: !Ref VpcId
-      SecurityGroupIngress:
-        - IpProtocol: tcp
-          FromPort: 80
-          ToPort: 80
-          CidrIp: 0.0.0.0/0
-
-  MyTargetGroup:
-    Type: AWS::ElasticLoadBalancingV2::TargetGroup
-    Properties:
-      Name: MyTargetGroup
-      Port: 80
-      Protocol: HTTP
-      VpcId: !Ref VpcId
-      TargetType: instance
-      HealthCheckPath: /
-
-  MyALB:
+  ALB:
     Type: AWS::ElasticLoadBalancingV2::LoadBalancer
     Properties:
-      Name: MyApplicationLoadBalancer
+      Name: Sanjana-ALB
       Scheme: internet-facing
-      Type: application
-      SecurityGroups:
-        - !Ref ALBSecurityGroup
+      LoadBalancerAttributes:
+        - Key: idle_timeout.timeout_seconds
+          Value: '60'
       Subnets: !Ref Subnets
+      SecurityGroups: []
       Tags:
         - Key: Name
-          Value: MyApplicationLoadBalancer
-
-  MyListener:
-    Type: AWS::ElasticLoadBalancingV2::Listener
-    Properties:
-      LoadBalancerArn: !Ref MyALB
-      Port: 80
-      Protocol: HTTP
-      DefaultActions:
-        - Type: forward
-          TargetGroupArn: !Ref MyTargetGroup
-
-Outputs:
-  ALBName:
-    Description: Name of the ALB
-    Value: !Ref MyALB
-  ALBURL:
-    Description: DNS name of the ALB
-    Value: !GetAtt MyALB.DNSName
+          Value: Sanjana-ALB
