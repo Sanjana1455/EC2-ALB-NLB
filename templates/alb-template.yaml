@@ -1,70 +1,67 @@
-AWSTemplateFormatVersion: "2010-09-09"
-Description: "Application Load Balancer setup in existing VPC"
+AWSTemplateFormatVersion: '2010-09-09'
+Description: ALB for EC2 Deployment (fixed subnet issue)
 
 Parameters:
   VpcId:
-    Type: String
-    Description: "VPC ID for ALB"
-  Subnets:
-    Type: CommaDelimitedList
-    Description: "Subnet IDs for ALB"
+    Type: AWS::EC2::VPC::Id
+    Description: VPC ID where the ALB will be created
 
 Resources:
+  # Security Group for ALB
   ALBSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupDescription: Allow HTTP access
+      GroupDescription: Security group for ALB
       VpcId: !Ref VpcId
       SecurityGroupIngress:
         - IpProtocol: tcp
           FromPort: 80
           ToPort: 80
           CidrIp: 0.0.0.0/0
-      Tags:
-        - Key: Name
-          Value: Sanjana-ALB-SG
+      SecurityGroupEgress:
+        - IpProtocol: -1
+          CidrIp: 0.0.0.0/0
+
+  # Select two subnets from same VPC (public ones)
+  PublicSubnets:
+    Type: AWS::EC2::Subnet::Id
+    Description: Public subnets for ALB
+    Default: subnet-xxxxxxxx,subnet-yyyyyyyy  # Replace with your two valid public subnets
 
   ApplicationLoadBalancer:
     Type: AWS::ElasticLoadBalancingV2::LoadBalancer
     Properties:
-      Name: Sanjana-ALB
-      Scheme: internet-facing
-      Type: application
-      IpAddressType: ipv4
+      Name: MyApplicationLB
+      Subnets:
+        - subnet-xxxxxxxx
+        - subnet-yyyyyyyy
       SecurityGroups:
         - !Ref ALBSecurityGroup
-      Subnets: !Ref Subnets
-      Tags:
-        - Key: Name
-          Value: Sanjana-ALB
+      Scheme: internet-facing
+      Type: application
 
   TargetGroup:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
-      Name: Sanjana-TG
+      VpcId: !Ref VpcId
       Protocol: HTTP
       Port: 80
-      VpcId: !Ref VpcId
       TargetType: instance
       HealthCheckProtocol: HTTP
       HealthCheckPath: /
       Matcher:
         HttpCode: 200
-      Tags:
-        - Key: Name
-          Value: Sanjana-TG
 
   Listener:
     Type: AWS::ElasticLoadBalancingV2::Listener
     Properties:
       LoadBalancerArn: !Ref ApplicationLoadBalancer
-      Port: 80
       Protocol: HTTP
+      Port: 80
       DefaultActions:
         - Type: forward
           TargetGroupArn: !Ref TargetGroup
 
 Outputs:
   LoadBalancerDNSName:
-    Description: "DNS name of the ALB"
-    Value: !GetAtt ApplicationLoadBalancer.DNSName
+    Description: DNS Name
