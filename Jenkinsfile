@@ -4,7 +4,7 @@ pipeline {
     environment {
         AWS_REGION = 'us-east-1'
         STACK_PREFIX = 'NetworkInfraStack'
-        AWS_CREDENTIALS = credentials('aws-credentials')  // Jenkins credential ID
+        AWS_CREDENTIALS = credentials('aws-cred')  // Jenkins credential ID
     }
 
     stages {
@@ -18,45 +18,48 @@ pipeline {
         stage('Deploy EC2 Stack') {
             steps {
                 echo "🚀 Deploying EC2 Stack..."
-                sh """
-                aws cloudformation deploy \
-                  --template-file templates/ec2.yaml \
-                  --stack-name ${STACK_PREFIX}-EC2 \
-                  --region ${AWS_REGION} \
-                  --capabilities CAPABILITY_NAMED_IAM \
-                  --no-fail-on-empty-changeset \
-                  --profile default
-                """
+                withAWS(credentials: 'aws-cred', region: "${AWS_REGION}") {
+                    sh """
+                    aws cloudformation deploy \
+                      --template-file templates/ec2.yaml \
+                      --stack-name ${STACK_PREFIX}-EC2 \
+                      --region ${AWS_REGION} \
+                      --capabilities CAPABILITY_NAMED_IAM \
+                      --no-fail-on-empty-changeset
+                    """
+                }
             }
         }
 
         stage('Deploy ALB Stack') {
             steps {
                 echo "🚀 Deploying ALB Stack..."
-                sh """
-                aws cloudformation deploy \
-                  --template-file templates/alb.yaml \
-                  --stack-name ${STACK_PREFIX}-ALB \
-                  --region ${AWS_REGION} \
-                  --capabilities CAPABILITY_NAMED_IAM \
-                  --no-fail-on-empty-changeset \
-                  --profile default
-                """
+                withAWS(credentials: 'aws-cred', region: "${AWS_REGION}") {
+                    sh """
+                    aws cloudformation deploy \
+                      --template-file templates/alb.yaml \
+                      --stack-name ${STACK_PREFIX}-ALB \
+                      --region ${AWS_REGION} \
+                      --capabilities CAPABILITY_NAMED_IAM \
+                      --no-fail-on-empty-changeset
+                    """
+                }
             }
         }
 
         stage('Deploy NLB Stack') {
             steps {
                 echo "🚀 Deploying NLB Stack..."
-                sh """
-                aws cloudformation deploy \
-                  --template-file templates/nlb.yaml \
-                  --stack-name ${STACK_PREFIX}-NLB \
-                  --region ${AWS_REGION} \
-                  --capabilities CAPABILITY_NAMED_IAM \
-                  --no-fail-on-empty-changeset \
-                  --profile default
-                """
+                withAWS(credentials: 'aws-cred', region: "${AWS_REGION}") {
+                    sh """
+                    aws cloudformation deploy \
+                      --template-file templates/nlb.yaml \
+                      --stack-name ${STACK_PREFIX}-NLB \
+                      --region ${AWS_REGION} \
+                      --capabilities CAPABILITY_NAMED_IAM \
+                      --no-fail-on-empty-changeset
+                    """
+                }
             }
         }
     }
